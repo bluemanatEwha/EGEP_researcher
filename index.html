@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EGEP 석학급 연구자 성과관리 대시보드 | 이화여자대학교</title>
+<style>
+  :root{
+    --green:#00664F; --green-d:#004d3b; --green-l:#e6f0ed;
+    --orange:#F0673C; --orange-l:#fdeae3;
+    --gray:#B9B9B9; --gray-d:#6b6f6d; --gray-l:#f4f5f4;
+    --ink:#1c2421; --line:#e3e6e4; --white:#fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--ink);background:#fafbfa;line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:0 28px}
+
+  /* Header */
+  header{background:var(--white);border-bottom:3px solid var(--green);position:sticky;top:0;z-index:50}
+  .hbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:42px;height:42px;border-radius:9px;background:var(--green);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-weight:800;font-size:19px;letter-spacing:-.5px}
+  .brand h1{font-size:19px;font-weight:800;letter-spacing:-.6px;color:var(--green-d)}
+  .brand .sub{font-size:12px;color:var(--gray-d);font-weight:500;margin-top:1px}
+  .hmeta{text-align:right;font-size:12px;color:var(--gray-d)}
+  .hmeta b{color:var(--orange);font-weight:700}
+
+  /* Tabs */
+  nav{display:flex;gap:4px;border-top:1px solid var(--line)}
+  nav button{background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;
+    color:var(--gray-d);padding:13px 18px;border-bottom:3px solid transparent;transition:.15s;letter-spacing:-.3px}
+  nav button:hover{color:var(--green)}
+  nav button.on{color:var(--green-d);border-bottom-color:var(--orange)}
+
+  main{padding:30px 0 70px}
+  .panel{display:none;animation:fade .35s ease}
+  .panel.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .sec-h{display:flex;align-items:baseline;gap:11px;margin:30px 0 16px}
+  .sec-h:first-child{margin-top:0}
+  .sec-h .n{font-size:12px;font-weight:800;color:var(--orange);letter-spacing:1px}
+  .sec-h h2{font-size:17px;font-weight:800;letter-spacing:-.5px;color:var(--green-d)}
+  .sec-h .note{font-size:12px;color:var(--gray-d);margin-left:auto}
+
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:13px}
+  .kpi{background:var(--white);border:1px solid var(--line);border-radius:13px;padding:17px 16px;position:relative;overflow:hidden}
+  .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green)}
+  .kpi.accent::before{background:var(--orange)}
+  .kpi .lab{font-size:11.5px;color:var(--gray-d);font-weight:600;letter-spacing:-.2px}
+  .kpi .val{font-size:25px;font-weight:800;color:var(--green-d);letter-spacing:-1px;margin-top:6px;line-height:1}
+  .kpi.accent .val{color:var(--orange)}
+  .kpi .unit{font-size:13px;font-weight:600;color:var(--gray-d);margin-left:2px}
+  .kpi .sub{font-size:11px;color:var(--gray-d);margin-top:5px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .card h3{font-size:14.5px;font-weight:800;color:var(--green-d);letter-spacing:-.4px;margin-bottom:3px}
+  .card .desc{font-size:12px;color:var(--gray-d);margin-bottom:14px}
+  .card.full{grid-column:1/-1}
+
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .axis{stroke:var(--line);stroke-width:1}
+  .gl{stroke:#eef0ef;stroke-width:1}
+  .tlab{font-size:11px;fill:var(--gray-d);font-family:inherit}
+  .vlab{font-size:11px;fill:var(--ink);font-weight:700;font-family:inherit}
+
+  .legend{display:flex;flex-wrap:wrap;gap:13px;margin-top:13px}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--gray-d);font-weight:600}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  /* benchmark gauge row */
+  .bench{display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .bench:last-child{border-bottom:none}
+  .bench .nm{width:74px;font-size:13px;font-weight:700;color:var(--ink)}
+  .bench .track{flex:1;height:18px;background:var(--gray-l);border-radius:9px;position:relative;overflow:hidden}
+  .bench .fill{height:100%;border-radius:9px;background:var(--green)}
+  .bench .mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--orange)}
+  .bench .v{width:54px;text-align:right;font-size:13px;font-weight:800;color:var(--green-d)}
+
+  /* table */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .toolbar input,.toolbar select{font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--line);
+    border-radius:9px;color:var(--ink);background:#fff;outline:none}
+  .toolbar input:focus,.toolbar select:focus{border-color:var(--green)}
+  .toolbar input[type=search]{min-width:220px;flex:1;max-width:320px}
+  .cnt{margin-left:auto;font-size:12px;color:var(--gray-d);font-weight:600}
+  .cnt b{color:var(--orange)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;font-size:11.5px;font-weight:700;color:var(--gray-d);padding:11px 10px;
+    border-bottom:2px solid var(--green);cursor:pointer;white-space:nowrap;user-select:none}
+  thead th.num{text-align:right}
+  thead th:hover{color:var(--green)}
+  thead th .arr{color:var(--orange);font-size:10px}
+  tbody td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  tbody tr{cursor:pointer;transition:.12s}
+  tbody tr:hover{background:var(--green-l)}
+  .nm-cell{font-weight:700;color:var(--green-d)}
+  .nm-cell small{display:block;font-weight:500;color:var(--gray-d);font-size:11px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+  .p-확정{background:var(--green-l);color:var(--green-d)}
+  .p-진행{background:#fff3e0;color:#b8651f}
+  .p-공동연구{background:#e8f0fe;color:#2456b8}
+  .p-심의{background:#f0eafe;color:#6b3fb8}
+  .p-제외,.p-보류{background:#f2f2f2;color:#8a8a8a}
+  .dpill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--gray-l);color:var(--gray-d)}
+  .fwci-hi{color:var(--orange);font-weight:800}
+  .expiring{color:var(--orange);font-weight:700}
+
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(20,30,26,.5);display:none;z-index:100;align-items:flex-start;justify-content:center;padding:50px 20px;overflow-y:auto}
+  .ov.on{display:flex}
+  .modal{background:#fff;border-radius:16px;max-width:720px;width:100%;padding:0;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+  .mhead{background:var(--green);color:#fff;padding:22px 26px;position:relative}
+  .mhead h3{font-size:21px;font-weight:800;letter-spacing:-.5px}
+  .mhead .mh-sub{font-size:13px;opacity:.9;margin-top:3px}
+  .mclose{position:absolute;top:18px;right:20px;background:rgba(255,255,255,.18);border:none;color:#fff;
+    width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer;line-height:1}
+  .mbody{padding:24px 26px}
+  .mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .mstat{background:var(--gray-l);border-radius:11px;padding:13px 14px}
+  .mstat .l{font-size:11px;color:var(--gray-d);font-weight:600}
+  .mstat .v{font-size:20px;font-weight:800;color:var(--green-d);margin-top:3px;letter-spacing:-.5px}
+  .mstat.hl{background:var(--orange-l)}
+  .mstat.hl .v{color:var(--orange)}
+  .mblock{margin-bottom:16px}
+  .mblock .bl{font-size:12px;font-weight:800;color:var(--green-d);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .mblock .bt{font-size:13px;color:var(--ink);line-height:1.6;white-space:pre-wrap;background:var(--gray-l);
+    padding:12px 14px;border-radius:10px;border-left:3px solid var(--orange)}
+  .minfo{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;font-size:13px;margin-bottom:18px}
+  .minfo div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)}
+  .minfo .k{color:var(--gray-d);font-weight:600}
+  .minfo .v{font-weight:700;color:var(--ink);text-align:right}
+
+  footer{border-top:1px solid var(--line);padding:22px 0;font-size:11.5px;color:var(--gray-d);text-align:center}
+  footer b{color:var(--green-d)}
+
+  .insight{background:var(--green-l);border-radius:12px;padding:15px 18px;font-size:13px;color:var(--green-d);
+    line-height:1.65;border-left:4px solid var(--green)}
+  .insight b{color:var(--orange)}
+  .insight .ih{font-weight:800;font-size:13px;margin-bottom:5px;display:block}
+
+  @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.grid2,.grid3{grid-template-columns:1fr}.mrow{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.wrap{padding:0 14px}.kpis{grid-template-columns:repeat(2,1fr)}nav{overflow-x:auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="hbar">
+      <div class="brand">
+        <div class="logo">梨</div>
+        <div>
+          <h1>EGEP 석학급 연구자 성과관리 대시보드</h1>
+          <div class="sub">Ewha Global Excellence Program · 연구개발기획팀</div>
+        </div>
+      </div>
+      <div class="hmeta">
+        기준일 <b>2026.03.26</b><br>연구성과 기준연도 2021–2025<br>Data Source: Scopus / SciVal
+      </div>
+    </div>
+    <nav id="nav">
+      <button class="on" data-t="overview">종합 현황</button>
+      <button data-t="contract">초빙·계약 관리</button>
+      <button data-t="comp">보상 분석</button>
+      <button data-t="metrics">연구역량 지표</button>
+      <button data-t="profile">연구자 프로파일</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- OVERVIEW -->
+  <section class="panel on" id="overview">
+    <div class="kpis" id="kpis"></div>
+
+    <div class="sec-h" style="margin-top:34px"><span class="n">01</span><h2>초빙 파이프라인 · 계열 분포</h2></div>
+    <div class="grid2">
+      <div class="card"><h3>초빙 진행 현황</h3><div class="desc">전체 51명 대상 초빙 단계별 분포</div><div id="c_status"></div></div>
+      <div class="card"><h3>계열별 초빙 인원</h3><div class="desc">확정 / 진행·기타 구분</div><div id="c_div"></div></div>
+    </div>
+
+    <div class="sec-h"><span class="n">02</span><h2>연구역량 벤치마크</h2><span class="note">▍ 글로벌 평균 기준선 (FWCI=1.0)</span></div>
+    <div class="grid2">
+      <div class="card"><h3>계열별 평균 FWCI</h3><div class="desc">Field-Weighted Citation Impact — 오렌지 기준선은 글로벌 평균(1.0)</div><div id="c_fwcidiv"></div></div>
+      <div class="card">
+        <h3>핵심 시사점</h3><div class="desc">성과관리 관점의 요약</div>
+        <div id="insight_box"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTRACT -->
+  <section class="panel" id="contract">
+    <div class="sec-h"><span class="n">01</span><h2>임용직위 · 트랙 구성</h2></div>
+    <div class="grid2">
+      <div class="card"><h3>임용직위 분포</h3><div class="desc">확정·진행 대상 직위 구성</div><div id="c_pos"></div></div>
+      <div class="card"><h3>유형/트랙별 분포</h3><div class="desc">신청 트랙 기준</div><div id="c_track"></div></div>
+    </div>
+
+    <div class="sec-h"><span class="n">02</span><h2>임용기간 · 계약 만료 관리</h2><span class="note">▍ 기준일 2026.06.16 · 잔여 6개월 이내 만료 임박</span></div>
+    <div class="card full"><h3>계약 임용기간 타임라인</h3><div class="desc">확정 계약자의 임용 시작–종료 구간. 오렌지 막대는 만료 임박(≤6개월) 계약</div><div id="c_timeline"></div></div>
+  </section>
+
+  <!-- COMPENSATION -->
+  <section class="panel" id="comp">
+    <div class="kpis" id="kpis_comp" style="grid-template-columns:repeat(4,1fr)"></div>
+    <div class="sec-h" style="margin-top:30px"><span class="n">01</span><h2>보상 구조 분석</h2></div>
+    <div class="grid2">
+      <div class="card"><h3>계열별 보상 총량</h3><div class="desc">연봉 · 인센티브(최대) 합계 — 단위 백만원</div><div id="c_compdiv"></div></div>
+      <div class="card"><h3>인센티브(최대) 규모 분포</h3><div class="desc">계약 건당 최대 인센티브 한도</div><div id="c_inchist"></div></div>
+    </div>
+
+    <div class="sec-h"><span class="n">02</span><h2>보상 대비 연구 임팩트 매트릭스</h2><span class="note">▍ 투자 우선순위 진단</span></div>
+    <div class="card full">
+      <h3>인센티브 한도 × FWCI 4분면</h3>
+      <div class="desc">X축: 인센티브 최대 한도(백만원) · Y축: FWCI · 점 크기: h-index · 색: 계열. 우상단일수록 고임팩트–고투자</div>
+      <div id="c_scatter"></div>
+      <div class="legend" id="scatter_leg"></div>
+    </div>
+  </section>
+
+  <!-- METRICS -->
+  <section class="panel" id="metrics">
+    <div class="sec-h"><span class="n">01</span><h2>핵심 질적 지표 벤치마크</h2></div>
+    <div class="grid3">
+      <div class="card"><h3>FWCI 분포</h3><div class="desc">구간별 인원 · 기준선 1.0</div><div id="c_fwcihist"></div></div>
+      <div class="card"><h3>h-index 분포</h3><div class="desc">연구 영향력 누적 지표</div><div id="c_hhist"></div></div>
+      <div class="card"><h3>Top 10% 논문 수 분포</h3><div class="desc">상위 10% 피인용 논문(편)</div><div id="c_tophist"></div></div>
+    </div>
+
+    <div class="sec-h"><span class="n">02</span><h2>계열별 지표 종합</h2></div>
+    <div class="card full"><h3>계열별 평균 연구지표</h3><div class="desc">FWCI · h-index · Citations/Publication · Top10% — 정규화 비교(계열 최대=100%)</div><div id="c_radar"></div></div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="panel" id="profile">
+    <div class="sec-h"><span class="n">01</span><h2>연구자 프로파일 · 통합 관리표</h2><span class="note">행 클릭 시 상세 카드</span></div>
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="이름 · 소속 · 신청단위 검색">
+      <select id="fdiv"><option value="">전체 계열</option></select>
+      <select id="fstat"><option value="">전체 진행현황</option></select>
+      <span class="cnt" id="rowcnt"></span>
+    </div>
+    <div class="card full" style="padding:8px 22px 18px">
+      <div style="overflow-x:auto"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+</main>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+
+<footer class="wrap">
+  <b>이화여자대학교 연구개발기획팀</b> · EGEP 석학급 연구자 성과관리 대시보드 · 데이터 출처: Scopus / SciVal (2021–2025)<br>
+  본 자료는 내부 성과관리 및 리더십 보고 목적으로 작성되었으며, 보상·계약 정보는 대외 비공개 사항입니다.
+</footer>
+
+<script>
+const DATA = [{"track": "가-A", "unit": "영어영문학부A", "division": "인문", "pi": "황준호", "facultyN": 13.0, "scholarN": 1.0, "name": "Chung-hye Han", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01.~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 12000000.0, "salaryNote": null, "monthly": 1000000.0, "incentive": 8000000.0, "incentiveNote": null, "conditions": "(필수) 기제출 및 계약 중 제출할 논문에 이화여대 소속 명시, 준비 중인 논문을 1년 내 SSCI에 교신저자로 제출, 최혜원 교수와 AI 공동연구를 시작하고 1년 내 SSCI 제출\n(인센티브) SSCI/AHCI: 제1/교신 300만원, 공동저자 200만원, 본교 교수 공동저술 500만원 지급. SCOPUS/SCIE/ESCI/DOAJ: 제1/교신 100만원 지급", "scopusId": "7403379487", "origPosition": "Professor", "home": "캐나다 사이먼 프레이저 대학교 (Linguistics)", "hIndex": 13.0, "h5Index": 2.0, "citations": 12.0, "outputs": 7.0, "citPerPub": 1.7, "fwci": 0.45, "top10": 0.0}, {"track": "가-A", "unit": "사회복지학A", "division": "사회과학", "pi": "노충래", "facultyN": 8.0, "scholarN": 3.0, "name": "Yuri Jang (장유리)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01.~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 10000800.0, "salaryNote": null, "monthly": 833400.0, "incentive": 12000000.0, "incentiveNote": null, "conditions": "(필수) 학기 중 특별강의 최소 1회 수행\n(인센티브)\n- 본교 소속 저자 없이 제1저자/교신저자 논문이 JCR 상위 25% 저널 게재 시, 편당 100만 원 지급\n- 본교 소속 저자 포함 제1저자/교신저자 논문이 JCR 상위 75% 저널 게재 시, 편당 100만 원 지급\n(단, 본교 소속 저자 포함 상위 25% 저널일 경우 추가 100만 원 지급으로 총 200만원 지급)", "scopusId": "7201869037", "origPosition": "John Milner Professor", "home": "미국 서던 캘리포니아 대학교 (Social Work)", "hIndex": 40.0, "h5Index": 11.0, "citations": 588.0, "outputs": 79.0, "citPerPub": 7.4, "fwci": 0.93, "top10": 9.0}, {"track": "가-A", "unit": "사회복지학A", "division": "사회과학", "pi": "노충래", "facultyN": 8.0, "scholarN": 3.0, "name": "Jun Sung Hong (홍준성)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01.~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 10000800.0, "salaryNote": null, "monthly": 833400.0, "incentive": 12000000.0, "incentiveNote": null, "conditions": "(필수) 학기 중 특별강의 최소 1회 수행\n(인센티브)\n- 본교 소속 저자 없이 제1저자/교신저자 논문이 JCR 상위 25% 저널 게재 시, 편당 100만 원 지급\n- 본교 소속 저자 포함 제1저자/교신저자 논문이 JCR 상위 75% 저널 게재 시, 편당 100만 원 지급\n(단, 본교 소속 저자 포함 상위 25% 저널일 경우 추가 100만 원 지급으로 총 200만원 지급)", "scopusId": "58037232000", "origPosition": "Associate Professor", "home": "미국 웨인주립대학교 (Social Work)", "hIndex": 48.0, "h5Index": 14.0, "citations": 1099.0, "outputs": 147.0, "citPerPub": 7.5, "fwci": 1.06, "top10": 12.0}, {"track": "가-A", "unit": "사회복지학A", "division": "사회과학", "pi": "노충래", "facultyN": 8.0, "scholarN": 3.0, "name": "Yoon, Susan H. (윤현)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01.~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 10000800.0, "salaryNote": null, "monthly": 833400.0, "incentive": 12000000.0, "incentiveNote": null, "conditions": "(필수) 학기 중 특별강의 최소 1회 수행\n(인센티브)\n- 본교 소속 저자 없이 제1저자/교신저자 논문이 JCR 상위 25% 저널 게재 시, 편당 100만 원 지급\n- 본교 소속 저자 포함 제1저자/교신저자 논문이 JCR 상위 75% 저널 게재 시, 편당 100만 원 지급\n(단, 본교 소속 저자 포함 상위 25% 저널일 경우 추가 100만 원 지급으로 총 200만원 지급)", "scopusId": "55897059600", "origPosition": "Associate Professor", "home": "미국 오하이오 주립대 (Social Work)", "hIndex": 25.0, "h5Index": 12.0, "citations": 676.0, "outputs": 78.0, "citPerPub": 8.7, "fwci": 1.38, "top10": 9.0}, {"track": "가-A", "unit": "커미부A", "division": "사회과학", "pi": "임소혜", "facultyN": 12.0, "scholarN": 3.0, "name": "S. Shyam Sundar", "position": "협의 중", "status": "진행 중", "statusGroup": "진행", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 36000000.0, "salaryNote": null, "monthly": 3000000.0, "incentive": 15000000.0, "incentiveNote": null, "conditions": "", "scopusId": "7103328070", "origPosition": "Chair Professor", "home": "미국 펜실베니아 주립대 (Communication)", "hIndex": 67.0, "h5Index": 19.0, "citations": 1743.0, "outputs": 69.0, "citPerPub": 25.3, "fwci": 3.87, "top10": 18.0}, {"track": "가-A", "unit": "커미부A", "division": "사회과학", "pi": "임소혜", "facultyN": 12.0, "scholarN": 3.0, "name": "Peter J. Schulz", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-01-01", "endDate": "2026-12-31", "period": "2026.01.01.~2026.12.31.", "monthsLeft": 6.5, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 20000000.0, "incentiveNote": null, "conditions": "(필수) 매년 SCOPUS 또는 JCR 저널에 본교 소속 표기 논문 3편 이상 게재\n(인센티브) Q1 SCOPUS 또는 JCR(SCIE·SSCI·AHCI) 저널에 제1저자/교신저자 게재 시 편당 400만 원 지급", "scopusId": "15065886000", "origPosition": "Visiting Professor", "home": "스위스 루가노대 (Communication, Culture and Society)", "hIndex": 48.0, "h5Index": 16.0, "citations": 1302.0, "outputs": 81.0, "citPerPub": 16.1, "fwci": 1.83, "top10": 17.0}, {"track": "가-A", "unit": "커미부A", "division": "사회과학", "pi": "임소혜", "facultyN": 12.0, "scholarN": 3.0, "name": "Rene Weber", "position": "임용 제외", "status": "심의 완료(Rene Weber 대신 Seunga Venus Jin 임용 요청)", "statusGroup": "심의", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 24000000.0, "incentiveNote": null, "conditions": "", "scopusId": "23037473300", "origPosition": "Professor", "home": "미국 캘리포니아 주립대(UCSB) (Communication)", "hIndex": 32.0, "h5Index": 9.0, "citations": 488.0, "outputs": 27.0, "citPerPub": 18.1, "fwci": 3.96, "top10": 14.8}, {"track": "가-A", "unit": "커미부A", "division": "사회과학", "pi": "임소혜", "facultyN": 12.0, "scholarN": 3.0, "name": "Seunga Venus Jin", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-06-01", "endDate": "2027-05-31", "period": "2026.06.01~2027.05.31", "monthsLeft": 11.5, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 20000000.0, "incentiveNote": null, "conditions": "(필수) 제1저자 혹은 교신저자로 본교 이중 소속 명시하여 Q1 SCOPUS 또는 JCR(SCIE, SSCI, AHCI) 저널 출판 시 편당 4,000,000원 지급", "scopusId": "26642071700", "origPosition": "", "home": "카타르 노스웨스턴대 (Communication Program)", "hIndex": 41.0, "h5Index": 11.0, "citations": 763.0, "outputs": 18.0, "citPerPub": 42.4, "fwci": 4.54, "top10": 9.0}, {"track": "가-A", "unit": "경영학A", "division": "사회과학", "pi": "최승호", "facultyN": 20.0, "scholarN": 1.0, "name": "Omrane Guedhami", "position": "Visiting Professor", "status": "진행 중", "statusGroup": "진행", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 50000000.0, "incentiveNote": null, "conditions": "1편당 150만원", "scopusId": "8886956400", "origPosition": "Professor", "home": "미국 사우스캐롤라이나 대학교 (Darla Moore School of Business)", "hIndex": 60.0, "h5Index": 19.0, "citations": 2423.0, "outputs": 65.0, "citPerPub": 37.3, "fwci": 3.06, "top10": 30.0}, {"track": "가-A", "unit": "물리학과A", "division": "자연과학", "pi": "김동욱", "facultyN": 11.0, "scholarN": 1.0, "name": "Ji-Seon Kim (김지선)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-01-01", "endDate": "2026-12-31", "period": "2026.01.01.~2026.12.31.", "monthsLeft": 6.5, "expiring": false, "salary": 32000400.0, "salaryNote": null, "monthly": 2666700.0, "incentive": 30000000.0, "incentiveNote": null, "conditions": "(필수) 매년 본교 소속 표기 공동저술 논문 4편 이상 게재, 최소 1주 방문 및 과학 특강 진행\n(인센티브) 단독/공동 교신저자로 JCR 상위 15% 저널 게재 시 편당 500만 원 지급", "scopusId": "55757743100", "origPosition": "Professor", "home": "영국 옥스포드대 (Electronic Materials)", "hIndex": 66.0, "h5Index": 24.0, "citations": 2046.0, "outputs": 66.0, "citPerPub": 31.0, "fwci": 2.03, "top10": 33.0}, {"track": "가-A", "unit": "화학나노과학A", "division": "자연과학", "pi": "김동하", "facultyN": 20.0, "scholarN": 4.0, "name": "Zhiqun Lin", "position": "Distinguished Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-02-01", "endDate": "2027-01-31", "period": "2026.02.01~2027.01.31", "monthsLeft": 7.5, "expiring": false, "salary": 7560000.0, "salaryNote": null, "monthly": 630000.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(필수) 매년 본교 소속 표기 공동저술 논문 2편 이상 게재, 최소 1주 방문 및 과학 특강 진행\n(인센티브) 단독/공동 교신저자로 JCR 상위 5% 저널 게재 시 편당 300만 원 지급", "scopusId": "8237419000", "origPosition": "Professor", "home": "싱가폴 국립대 (Chemical and Biomolecular Engineering)", "hIndex": 120.0, "h5Index": 51.0, "citations": 10024.0, "outputs": 149.0, "citPerPub": 67.3, "fwci": 3.44, "top10": 94.0}, {"track": "가-A", "unit": "화학나노과학A", "division": "자연과학", "pi": "김동하", "facultyN": 20.0, "scholarN": 4.0, "name": "Emiliano Cortes", "position": "Distinguished Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-02-01", "endDate": "2027-01-31", "period": "2026.02.01~2027.01.31", "monthsLeft": 7.5, "expiring": false, "salary": 30000000.0, "salaryNote": null, "monthly": 2500000.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(필수) 매년  본교 소속 표기  공동저술 논문 3편 이상 게재, 최소 1주 방문 및 과학 특강 진행", "scopusId": "26424957600", "origPosition": "Professor", "home": "독일 뮌헨 루드비히 막시밀리안 대학교 (Physics)", "hIndex": 56.0, "h5Index": 35.0, "citations": 5830.0, "outputs": 133.0, "citPerPub": 43.8, "fwci": 3.42, "top10": 74.0}, {"track": "가-A", "unit": "화학나노과학A", "division": "자연과학", "pi": "김동하", "facultyN": 20.0, "scholarN": 4.0, "name": "Thomas Heine", "position": "Distinguished Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-02-01", "endDate": "2027-01-31", "period": "2026.02.01~2027.01.31", "monthsLeft": 7.5, "expiring": false, "salary": 36000000.0, "salaryNote": null, "monthly": 3000000.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(필수) 매년 본교 소속 표기  공동저술 논문 3편 이상 게재, 최소 1주 방문 및 과학 특강 진행", "scopusId": "55777593400", "origPosition": "Professor", "home": "독일 드레스덴 공과대학교 (Theoretical Chemistry)", "hIndex": 106.0, "h5Index": 29.0, "citations": 3239.0, "outputs": 126.0, "citPerPub": 25.7, "fwci": 2.41, "top10": 52.0}, {"track": "가-A", "unit": "화학나노과학A", "division": "자연과학", "pi": "김동하", "facultyN": 20.0, "scholarN": 4.0, "name": "Liu, Xiao Gang", "position": "Distinguished Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-02-01", "endDate": "2027-01-31", "period": "2026.02.01~2027.01.31", "monthsLeft": 7.5, "expiring": false, "salary": 7560000.0, "salaryNote": null, "monthly": 630000.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(필수) 매년  본교 소속 표기  공동저술 논문 2편 이상 게재, 최소 1주 방문 및 과학 특강 진행\n(인센티브) 단독/공동 교신저자로 JCR 상위 5% 저널 게재 시 편당 300만 원 지급", "scopusId": "58335264700", "origPosition": "Distinguished Professor", "home": "싱가폴 국립대 (Chemistry)", "hIndex": 122.0, "h5Index": 51.0, "citations": 12687.0, "outputs": 271.0, "citPerPub": 46.8, "fwci": 3.07, "top10": 150.0}, {"track": "가-A", "unit": "생명과학과A", "division": "자연과학", "pi": "노태영", "facultyN": 14.0, "scholarN": 2.0, "name": "Yutaka Kondo", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 15000000.0, "salaryNote": null, "monthly": 1250000.0, "incentive": 4000000.0, "incentiveNote": null, "conditions": "(필수) 매년 최소 1회 이화여대 방문하여 강의 진행 또는 공동연구 관련 자문 제공\n(인센티브) 이화여대 소속을 이중으로 명시하여 JCR 상위 5% 저널에 제1저자 혹은 교신저자로 출판 시 지급", "scopusId": "35292310600", "origPosition": "Professor", "home": "일본 나고야대 (Neurological Diseases and Cancer)", "hIndex": 57.0, "h5Index": 10.0, "citations": 354.0, "outputs": 19.0, "citPerPub": 18.6, "fwci": 2.53, "top10": 4.0}, {"track": "가-A", "unit": "생명과학과A", "division": "자연과학", "pi": "노태영", "facultyN": 14.0, "scholarN": 2.0, "name": "Kyung-Min Noh (노경민)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 15000000.0, "salaryNote": null, "monthly": 1250000.0, "incentive": 4000000.0, "incentiveNote": null, "conditions": "(필수) 매년 최소 1회 이화여대 방문하여 강의 진행 또는 공동연구 관련 자문 제공\n(인센티브) 이화여대 소속을 이중으로 명시하여 JCR 상위 5% 저널에 제1저자 혹은 교신저자로 출판 시 지급", "scopusId": "7005821178", "origPosition": "Professor", "home": "덴마크 오르후스대학교 (Biomedicine)", "hIndex": 28.0, "h5Index": 7.0, "citations": 219.0, "outputs": 11.0, "citPerPub": 19.9, "fwci": 2.23, "top10": 4.0}, {"track": "가-A", "unit": "기후에너지시스템공학과A", "division": "공학", "pi": "민배현", "facultyN": 8.0, "scholarN": 3.0, "name": "Song Yang", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 23520000.0, "salaryNote": null, "monthly": 1960000.0, "incentive": 15000000.0, "incentiveNote": null, "conditions": "(필수) 매년 이화여대 소속 명시하여 3편 이상 JCR-SCIE 저널 출판, 매년 최소 1주일 방문 및 과학 특강 진행\n(인센티브) 이화여대 소속 연구자 1인 이상 포함하여 제1/교신저자 출판 시 차등 지급 (상위 5%: 500만원, 상위 15%: 300만원, 상위 25%: 100만원)", "scopusId": "7408519295", "origPosition": "Professor", "home": "중국 중산대학교 (Atmosphere Sciences)", "hIndex": 66.0, "h5Index": 21.0, "citations": 2634.0, "outputs": 183.0, "citPerPub": 14.4, "fwci": 1.5, "top10": 42.0}, {"track": "가-A", "unit": "기후에너지시스템공학과A", "division": "공학", "pi": "민배현", "facultyN": 8.0, "scholarN": 3.0, "name": "Vo Thanh, Hung Vo", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 14640000.0, "salaryNote": null, "monthly": 1220000.0, "incentive": 15000000.0, "incentiveNote": null, "conditions": "(필수) 매년 이화여대 소속 명시하여 3편 이상 JCR-SCIE 저널 출판, 매년 최소 1주일 방문 및 과학 특강 진행\n(인센티브) 이화여대 소속 연구자 1인 이상 포함하여 제1/교신저자 출판 시 차등 지급 (상위 5%: 500만원, 상위 15%: 300만원, 상위 25%: 100만원)", "scopusId": "57208342673", "origPosition": "Assistant Professor", "home": "일본 와세다대 (Science and Engineering)", "hIndex": 35.0, "h5Index": 24.0, "citations": 2882.0, "outputs": 111.0, "citPerPub": 26.0, "fwci": 2.82, "top10": 72.0}, {"track": "가-A", "unit": "기후에너지시스템공학과A", "division": "공학", "pi": "민배현", "facultyN": 8.0, "scholarN": 3.0, "name": "Gautam, Sneha", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 15000000.0, "incentiveNote": null, "conditions": "(필수) 매년 이화여대 소속 명시하여 3편 이상 JCR-SCIE 저널 출판\n(인센티브) 이화여대 소속 연구자 1인 이상 포함하여 제1/교신저자 출판 시 차등 지급 (상위 5%: 500만원, 상위 15%: 300만원, 상위 25%: 100만원)", "scopusId": "56702038600", "origPosition": "Professor", "home": "인도 카루나 공과기술과학대학교 (Division of Civil Engineering)", "hIndex": 40.0, "h5Index": 29.0, "citations": 2950.0, "outputs": 157.0, "citPerPub": 18.8, "fwci": 2.01, "top10": 61.0}, {"track": "가-A", "unit": "약학과A", "division": "의약·간호", "pi": "김광명", "facultyN": 15.0, "scholarN": 2.0, "name": "Chen, Xiaoyuan Shawn", "position": "임용 제외", "status": "심의 완료(Chen, Xiaoyuan Shawn 대신 Pu, Kanyi 임용 요청)", "statusGroup": "심의", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 43455000.0, "incentiveNote": null, "conditions": "", "scopusId": "57837791300", "origPosition": "Chair Professor", "home": "중국 산둥 제일 의과대 (Shandong Provincial Key Laboratory of Precision Oncology)", "hIndex": 200.0, "h5Index": 69.0, "citations": 17412.0, "outputs": 403.0, "citPerPub": 43.2, "fwci": 3.5, "top10": 63.3}, {"track": "가-A", "unit": "약학과A", "division": "의약·간호", "pi": "김광명", "facultyN": 15.0, "scholarN": 2.0, "name": "Pu, Kanyi", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-05-01", "endDate": "2027-04-30", "period": "2026.05.01.~2027.04.30.", "monthsLeft": 10.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": null, "incentiveNote": "USD 30,000", "conditions": "(필수) 매년 본교 교수와 1편 이상 SCI 공동 저술 출판, 매년 최소 1회 방문 및 과학 특강(scientific lecture) 진행\n(인센티브) 이화여대 교수와 공동 저술하여 상위 15% SCI 저널 출판 시 USD 20,000, 동일 조건 추가 출판 시 USD 10,000 지급", "scopusId": "26635739000", "origPosition": "Chair Professor", "home": "싱가포르 난양공과대 (School of Chemical and Biomedical Engineering)", "hIndex": 127.0, "h5Index": 57.0, "citations": 11237.0, "outputs": 118.0, "citPerPub": 95.2, "fwci": 5.04, "top10": 103.0}, {"track": "가-A", "unit": "약학과A", "division": "의약·간호", "pi": "김광명", "facultyN": 15.0, "scholarN": 2.0, "name": "James J. Moon", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": null, "incentiveNote": "USD 30,000", "conditions": "(필수) 매년 최소 1회 이화여대 약학대학 방문\n(인센티브) 이화여대 교수와 공동 저술하여 상위 15% SCI 저널 출판 시 USD 20,000, 동일 조건 추가 출판 시 USD 10,000 지급", "scopusId": "35726004100", "origPosition": "Visiting Professor", "home": "미국 미시간대 (Chemical Engineering)", "hIndex": 64.0, "h5Index": 24.0, "citations": 2677.0, "outputs": 49.0, "citPerPub": 54.6, "fwci": 3.53, "top10": 32.0}, {"track": "가-B", "unit": "사학과B", "division": "인문", "pi": "남종국", "facultyN": 14.0, "scholarN": 2.0, "name": "Michael Kazin", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 35000400.0, "salaryNote": null, "monthly": 2916700.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(필수)매년 이화여대 소속 명시하여 1편 이상 공동 저술 논문 출판, 특별 강의(special lecture) 1회 진행 및 이화여대와 협력하여 연구 세미나 개최", "scopusId": "25641346700", "origPosition": "Professor", "home": "미국 조지타운대 (History)", "hIndex": 5.0, "h5Index": 1.0, "citations": 7.0, "outputs": 12.0, "citPerPub": 0.6, "fwci": 0.35, "top10": 0.0}, {"track": "가-B", "unit": "사학과B", "division": "인문", "pi": "남종국", "facultyN": 14.0, "scholarN": 2.0, "name": "Yukio Lippit", "position": "협의 중", "status": "진행 중", "statusGroup": "진행", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 35000000.0, "salaryNote": null, "monthly": 2916666.667, "incentive": 0.0, "incentiveNote": null, "conditions": "", "scopusId": "35177925200", "origPosition": "Chair Professor", "home": "미국 하버드대 (History of Art and Architecture)", "hIndex": 4.0, "h5Index": 0.0, "citations": 0.0, "outputs": 2.0, "citPerPub": 0.0, "fwci": 0.0, "top10": 0.0}, {"track": "가-B", "unit": "전자전기공학B", "division": "공학", "pi": "지창현", "facultyN": 14.0, "scholarN": 1.0, "name": "Mihaela van der Schaar", "position": "임용 제외", "status": "심의 완료(Mihaela van der Schaar 대신 Ben Yoo 임용 요청)", "statusGroup": "심의", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 40000000.0, "salaryNote": null, "monthly": 3333333.333, "incentive": 30000000.0, "incentiveNote": null, "conditions": "", "scopusId": "35605361700", "origPosition": "John Humphrey Plummer Professor", "home": "영국 캠브리지대 (Mathematics)", "hIndex": 71.0, "h5Index": 34.0, "citations": 4159.0, "outputs": 206.0, "citPerPub": 20.2, "fwci": 2.86, "top10": 24.8}, {"track": "가-B", "unit": "전자전기공학B", "division": "공학", "pi": "지창현", "facultyN": 14.0, "scholarN": 1.0, "name": "Ben Yoo", "position": "임용 제외", "status": "심의 완료(Ben Yoo 대신 Forest Zhu 임용 요청)", "statusGroup": "심의", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 40000000.0, "salaryNote": null, "monthly": 3333333.333, "incentive": 10000000.0, "incentiveNote": null, "conditions": "", "scopusId": "", "origPosition": "", "home": "캘리포니아 UC 데이비스 (Electrical and Computer Engineering)", "hIndex": 59.0, "h5Index": 17.0, "citations": 856.0, "outputs": 111.0, "citPerPub": 7.7, "fwci": 1.08, "top10": 11.0}, {"track": "가-B", "unit": "전자전기공학B", "division": "공학", "pi": "지창현", "facultyN": 14.0, "scholarN": 1.0, "name": "Forest Zhu", "position": "협의 중", "status": "진행 중", "statusGroup": "진행", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": null, "salaryNote": null, "monthly": null, "incentive": null, "incentiveNote": null, "conditions": "", "scopusId": "", "origPosition": "", "home": "테크놀러지 시드니 대학 (School of Electrical and Data Engineering)", "hIndex": null, "h5Index": null, "citations": null, "outputs": null, "citPerPub": null, "fwci": null, "top10": null}, {"track": "가-B", "unit": "건축도시시스템공학과B", "division": "공학", "pi": "이준성", "facultyN": 16.0, "scholarN": 3.0, "name": "Kodur, Venkatesh K.R.", "position": "Visiting Professor", "status": "공동연구", "statusGroup": "공동연구", "startDate": "2026-05-16", "endDate": "2026-08-15", "period": "", "monthsLeft": 2.0, "expiring": true, "salary": 24000000.0, "salaryNote": null, "monthly": 2000000.0, "incentive": 46000000.0, "incentiveNote": null, "conditions": "(논문) 교신저자 시 Q1 700만원, Q2 500만원 / 그 외 저자 시 Q1 500만원, Q2 300만원 지급\n(인건비) 본교생 논문 지도 등 공동연구 수행 조건 충족 시 2,400만원 참여연구원 인건비 지급", "scopusId": "7004082931", "origPosition": "Distinguished Professor", "home": "미국 미시간주립대 (Civil and Environmental Engineering)", "hIndex": 76.0, "h5Index": 22.0, "citations": 1580.0, "outputs": 88.0, "citPerPub": 18.0, "fwci": 1.57, "top10": 24.0}, {"track": "가-B", "unit": "건축도시시스템공학과B", "division": "공학", "pi": "이준성", "facultyN": 16.0, "scholarN": 3.0, "name": "Yongwoo Kim", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(필수) 매년 이화여대 소속 명시하여 2편 이상 SCOPUS 또는 JCR 저널 출판, 이화여대 학생 대상 온/오프라인 연구 및 논문 지도 수행\n(인센티브) 이화여대 소속으로 논문 출판 시 교신저자 기준 Q1: 5,000,000원, Q2: 3,000,000원 지급", "scopusId": "25931660900", "origPosition": "Professor", "home": "미국 워싱턴대 (Construction Management)", "hIndex": 22.0, "h5Index": 8.0, "citations": 184.0, "outputs": 15.0, "citPerPub": 12.3, "fwci": 0.83, "top10": 4.0}, {"track": "가-B", "unit": "건축도시시스템공학과B", "division": "공학", "pi": "이준성", "facultyN": 16.0, "scholarN": 3.0, "name": "Soowon Chang", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(필수) 매년 이화여대 소속 명시하여 2편 이상 SCOPUS 또는 JCR 저널 출판, 이화여대 학생 대상 온/오프라인 연구 및 논문 지도 수행\n(인센티브) 이화여대 소속으로 논문 출판 시 교신저자 기준 Q1: 5,000,000원, Q2: 3,000,000원 지급", "scopusId": "57188736773", "origPosition": "Assistant Professor", "home": "미국 퍼듀대 (Construction Management Technology)", "hIndex": 17.0, "h5Index": 11.0, "citations": 346.0, "outputs": 30.0, "citPerPub": 11.5, "fwci": 1.64, "top10": 8.0}, {"track": "가-B", "unit": "의학과B1", "division": "의약·간호", "pi": "송태진", "facultyN": 25.0, "scholarN": 2.0, "name": "Sun Ha Jee (지선하)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 20000000.0, "incentiveNote": null, "conditions": "(필수) 이화여대 의학과 공동연구 체계 및 해외 연구기관 네트워크 구축, 연구/자문 지원\n(인센티브) 본교 소속으로 S급, 특A급 논문에 제1저자/교신저자 게재 시 편당 5,000,000원 지급", "scopusId": "16039275900", "origPosition": "Visiting Professor", "home": "연세대학교 (보건대학원)", "hIndex": 87.0, "h5Index": 18.0, "citations": 9894.0, "outputs": 87.0, "citPerPub": 113.7, "fwci": 32.39, "top10": 24.0}, {"track": "가-B", "unit": "의학과B1", "division": "의약·간호", "pi": "송태진", "facultyN": 25.0, "scholarN": 2.0, "name": "Lee, Sang Yup (이상엽)", "position": "사업단에서 보류", "status": "사업단에서 보류", "statusGroup": "보류", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 0.0, "incentiveNote": null, "conditions": "논의 중", "scopusId": "57193960263", "origPosition": "Professor", "home": "카이스트 (공학생물학대학원)", "hIndex": 128.0, "h5Index": 31.0, "citations": 2976.0, "outputs": 112.0, "citPerPub": 26.6, "fwci": 2.05, "top10": 61.0}, {"track": "가-B", "unit": "의학과B2", "division": "의약·간호", "pi": "하은희", "facultyN": 9.0, "scholarN": 2.0, "name": "Zorana J. Andersen", "position": "Distinguished Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-06-01", "endDate": "2027-05-31", "period": "2026.06.01.~2027.05.31.", "monthsLeft": 11.5, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(필수) 매년 이화여대 소속 명시하여 2편 이상 SCOPUS 또는 JCR 저널 출판, 계약 기간 중 본교 방문 및 과학 특강(scientific lecture) 진행", "scopusId": "23003667600", "origPosition": "Professor", "home": "덴마크 코펜하겐대 (Public Health)", "hIndex": 67.0, "h5Index": 26.0, "citations": 3198.0, "outputs": 113.0, "citPerPub": 28.3, "fwci": 2.77, "top10": 45.0}, {"track": "가-B", "unit": "의학과B2", "division": "의약·간호", "pi": "하은희", "facultyN": 9.0, "scholarN": 2.0, "name": "Richard J. Johnson", "position": "Distinguished Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-05-01", "endDate": "2027-04-30", "period": "2026.05.01.~2027.04.30.", "monthsLeft": 10.4, "expiring": false, "salary": 18000000.0, "salaryNote": null, "monthly": 1500000.0, "incentive": 5000000.0, "incentiveNote": null, "conditions": "(필수) 매년 이화여대 소속 명시하여 3편 이상 공동 저술 논문 출판, 학생 국제 교류 활동 지도 및 국제 학술 협력/행사 주최\n(인센티브) 기본 의무 출판물 제외, 이화여대 소속 명시하여 단독 혹은 공동 교신저자로 상위 5% JCR 저널 출판 시 편당 2,500,000원 지급", "scopusId": "58128824400", "origPosition": "Professor Emeritus", "home": "미국 콜로라도대(Denver) (Medicine)", "hIndex": 136.0, "h5Index": 26.0, "citations": 1607.0, "outputs": 116.0, "citPerPub": 13.9, "fwci": 1.35, "top10": 22.0}, {"track": "가-B", "unit": "사이버보안학B", "division": "공학", "pi": "양대헌", "facultyN": 18.0, "scholarN": 2.0, "name": "David Mohaisen", "position": "협의 중", "status": "진행 중", "statusGroup": "진행", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": null, "salaryNote": "협의 중", "monthly": null, "incentive": null, "incentiveNote": "협의 중", "conditions": "협의 중", "scopusId": "14027298300", "origPosition": "Professor", "home": "미국 센트럴 플로리다대 (Computer Science)", "hIndex": 42.0, "h5Index": 20.0, "citations": 1591.0, "outputs": 101.0, "citPerPub": 15.8, "fwci": 1.66, "top10": 19.0}, {"track": "가-B", "unit": "사이버보안학B", "division": "공학", "pi": "양대헌", "facultyN": 18.0, "scholarN": 2.0, "name": "Rhongho Jang", "position": "협의 중", "status": "심의 완료( Rhongho Jang 대신 David Mohaisen 임용 요청)", "statusGroup": "심의", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": null, "salaryNote": "협의 중", "monthly": null, "incentive": null, "incentiveNote": "협의 중", "conditions": "", "scopusId": "57195339172", "origPosition": "Assistant Professor", "home": "미국 웨인주립대 (Computer Science)", "hIndex": 12.0, "h5Index": 10.0, "citations": 236.0, "outputs": 18.0, "citPerPub": 13.1, "fwci": 2.2, "top10": 22.2}, {"track": "나-A", "unit": "의류산업학A", "division": "사회과학", "pi": "윤창상", "facultyN": 5.0, "scholarN": 1.0, "name": "Byoungho Ellie Jin (진병호)", "position": "Distinguished Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-02-01", "endDate": "2027-01-31", "period": "2026.02.01~2027.01.31", "monthsLeft": 7.5, "expiring": false, "salary": 36000000.0, "salaryNote": null, "monthly": 3000000.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(필수) 이화여대 소속 명시하여 6편 이상 공동 저술 논문 출판, 2회의 온라인 특별 강의 및 연구 세미나 수행", "scopusId": "7201509682", "origPosition": "Professor", "home": "미국 노스캐롤라이나주립대 (Wilson College of Textiles)", "hIndex": 36.0, "h5Index": 9.0, "citations": 392.0, "outputs": 28.0, "citPerPub": 14.0, "fwci": 1.3, "top10": 5.0}, {"track": "나-A", "unit": "화공신소재공학A", "division": "공학", "pi": "김우재", "facultyN": 10.0, "scholarN": 1.0, "name": "Lee, Daeyeon  (이대연)", "position": "Visiting Professor", "status": "공동연구 상호합의서 작성 완료", "statusGroup": "공동연구", "startDate": "2026-03-01", "endDate": "2027-06-30", "period": "2026.03.01~2027.06.30", "monthsLeft": 12.5, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(필수) '지속가능한 화학공학을 위한 글로벌 연구교육팀' 관련 공동연구 수행 및 국제 연구 성과 창출 (모든 논문 및 성과에 'Ewha Womans University' 소속 표기 필수)", "scopusId": "8882507400", "origPosition": "Russell Pearce and Elizabeth Crimian Heuer Professor", "home": "미국 펜실베니아 주립대 (Chemical & Biomolecular Engineering)", "hIndex": 66.0, "h5Index": 17.0, "citations": 1490.0, "outputs": 94.0, "citPerPub": 15.9, "fwci": 1.24, "top10": 19.0}, {"track": "나-A", "unit": "화공신소재공학A", "division": "공학", "pi": "김우재", "facultyN": 10.0, "scholarN": 1.0, "name": "David A. Weitz", "position": "Visiting Professor", "status": "공동연구 상호합의서 작성 완료", "statusGroup": "공동연구", "startDate": "2026-03-01", "endDate": "2027-06-30", "period": "2026.03.01~2027.06.30", "monthsLeft": 12.5, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(필수) '지속가능한 화학공학을 위한 글로벌 연구교육팀' 관련 공동연구 수행 및 국제 연구 성과 창출 (모든 논문 및 성과에 'Ewha Womans University' 소속 표기 필수)", "scopusId": "7006798731", "origPosition": "Russell Pearce and Elizabeth Crimian Heuer Professor", "home": "미국 하버드대 (Chemical & Biomolecular Engineering)", "hIndex": 175.0, "h5Index": 33.0, "citations": 3768.0, "outputs": 113.0, "citPerPub": 33.3, "fwci": 2.69, "top10": 55.0}, {"track": "나-A", "unit": "환경공학과A", "division": "공학", "pi": "윤여민", "facultyN": 9.0, "scholarN": 1.0, "name": "Shane A. Snyder", "position": "Distinguished Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 30000000.0, "salaryNote": null, "monthly": 2500000.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(필수) 이화여대 소속 명시하여 상위 15% JCR 공동 저술 논문 5편 이상 출판, 최소 1주일 방문 및 과학 특강 진행", "scopusId": "7401687489", "origPosition": "Distinguished Professor", "home": "미국 조지아공과대 (Environmental Engineering)", "hIndex": 88.0, "h5Index": 25.0, "citations": 2222.0, "outputs": 87.0, "citPerPub": 25.5, "fwci": 1.12, "top10": 25.0}, {"track": "나-A", "unit": "식품영양학A", "division": "자연과학", "pi": "박윤정", "facultyN": 7.0, "scholarN": 2.0, "name": "Qi Sun", "position": "임용 취소", "status": "심의 완료( Qi Sun 대신 Hummel, Thomas 임용 요청)", "statusGroup": "심의", "startDate": null, "endDate": null, "period": "", "monthsLeft": null, "expiring": false, "salary": 50000000.0, "salaryNote": null, "monthly": 4166666.667, "incentive": 0.0, "incentiveNote": null, "conditions": "", "scopusId": "55245866000", "origPosition": "Associate Professor", "home": "미국 하버드대 (Nutrition and Epidemiology)", "hIndex": 103.0, "h5Index": 31.0, "citations": 4322.0, "outputs": 145.0, "citPerPub": 29.8, "fwci": 4.42, "top10": 42.1}, {"track": "나-A", "unit": "식품영양학A", "division": "자연과학", "pi": "박윤정", "facultyN": 7.0, "scholarN": 2.0, "name": "Thomas Hummel", "position": "Visiting Professor", "status": "공동연구 상호합의서 작성 완료", "statusGroup": "공동연구", "startDate": "2026-06-01", "endDate": "2027-05-31", "period": "2026.06.01.~2027.05.31.", "monthsLeft": 11.5, "expiring": false, "salary": 30000000.0, "salaryNote": null, "monthly": 2500000.0, "incentive": 20000000.0, "incentiveNote": null, "conditions": "(필수) JCR 상위 5% 저널 3편(또는 상위 15% 6편) 출판 필수\n(인센티브) 기본 출판 의무(상위 5% 3편) 충족 후 추가 출판 논문에 대해 지급 (상위 5%: 400만원, 상위 15%: 200만원) 및 신산업융합대학 교수진과 공동저술 시 편당 200만원 추가 지급", "scopusId": "57203055845", "origPosition": "", "home": "독일 드레스덴 공과 대학 (Otorhinolaryngology)", "hIndex": 108.0, "h5Index": 32.0, "citations": 4534.0, "outputs": 370.0, "citPerPub": 12.3, "fwci": 1.73, "top10": 45.0}, {"track": "나-A", "unit": "식품영양학A", "division": "자연과학", "pi": "박윤정", "facultyN": 7.0, "scholarN": 2.0, "name": "박태현", "position": "Visiting Professor", "status": "공동연구 상호합의서 작성 완료", "statusGroup": "공동연구", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(필수) '통합건강을 위한 다중모드 식품영양 연구사업단' 관련 공동연구 및 국제논문 성과 창출 (연구 성과에 '이화여자대학교' 소속 표기 필수)\n(인센티브) JCR 상위 5% 저널(S급) 논문 1편당 6,000,000원, 상위 15% 저널(특A급) 논문 1편당 4,000,000원 지급", "scopusId": "34969448600", "origPosition": "특임교수", "home": "본교 식품영양학", "hIndex": 58.0, "h5Index": 12.0, "citations": 598.0, "outputs": 40.0, "citPerPub": 15.0, "fwci": 1.29, "top10": 9.0}, {"track": "나-A", "unit": "식품영양학A", "division": "자연과학", "pi": "박윤정", "facultyN": 7.0, "scholarN": 2.0, "name": "Seoki Lee (이석기)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 30000000.0, "salaryNote": null, "monthly": 2500000.0, "incentive": 20000000.0, "incentiveNote": null, "conditions": "(필수) 계약기간 중 이화여대 소속 명시하여 S급(상위 5%) 논문 3편 또는 특A급(상위 15%) 논문 5편 출판 필수 (기본 출판 의무)\n(인센티브) 기본 출판 의무를 충족한 후 '추가로' 출판된 논문에 대해 지급 (JCR 5% 이내 S급: 400만원, JCR 15% 이내 특A급: 200만원) 및 이화여대 교수진과 공동저술 시 200만원 추가 지급", "scopusId": "16042676100", "origPosition": "Professor", "home": "미국 펜실베니아 주립대 (Hospitality Management)", "hIndex": 41.0, "h5Index": 16.0, "citations": 1035.0, "outputs": 52.0, "citPerPub": 19.9, "fwci": 1.53, "top10": 19.0}, {"track": "나-A", "unit": "간호학부A", "division": "의약·간호", "pi": "강윤희", "facultyN": 13.0, "scholarN": 2.0, "name": "Yun-Hee Jeon (전윤희)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 20000400.0, "salaryNote": null, "monthly": 1666700.0, "incentive": 20000000.0, "incentiveNote": null, "conditions": "(필수) 이화여대 소속 명시하여 상위 10% SCI/SSCI 저널에 3편 이상 논문 출판\n(인센티브) 본교 간호대 교수와 공동연구 논문이 JCR 간호·보건 분야 상위 15% 저널 게재 시 편당 200만 원 지급", "scopusId": "59237233400", "origPosition": "Professor", "home": "호주 시드니대 (Healthy Ageing)", "hIndex": 37.0, "h5Index": 12.0, "citations": 744.0, "outputs": 72.0, "citPerPub": 10.3, "fwci": 1.55, "top10": 12.0}, {"track": "나-A", "unit": "간호학부A", "division": "의약·간호", "pi": "강윤희", "facultyN": 13.0, "scholarN": 2.0, "name": "Brendan McCormack", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 20000400.0, "salaryNote": null, "monthly": 1666700.0, "incentive": 20000000.0, "incentiveNote": null, "conditions": "(필수) 매년 SCI/SSCI 상위 10% 저널에 본교 이중 소속 표기 논문 3편 이상 게재\n(인센티브) 본교 간호대 교수와 공동연구 논문이 JCR 간호·보건 분야 상위 15% 저널 게재 시 편당 200만 원 지급", "scopusId": "57201819850", "origPosition": "Professor", "home": "호주 시드니대 (Nursing)", "hIndex": 48.0, "h5Index": 12.0, "citations": 748.0, "outputs": 106.0, "citPerPub": 7.1, "fwci": 2.35, "top10": 12.0}, {"track": "나-B", "unit": "약학과B", "division": "의약·간호", "pi": "강수성", "facultyN": 9.0, "scholarN": 2.0, "name": "Genji Kurisu", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-05-01", "endDate": "2027-04-30", "period": "2026.05.01.~2027.04.30.", "monthsLeft": 10.4, "expiring": false, "salary": 10000800.0, "salaryNote": null, "monthly": 833400.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(필수) 매년 최소 1회 방문 및 과학 특강(scientific lecture) 진행\n(인센티브) EGEP 참여 본교 교수와 공동저술 및 이화여대 이중소속 표기하여 Q1 JCR 저널 출판 시 편당 5,000,000원 지급 (계약기간 내 최대 2편)", "scopusId": "6701675123", "origPosition": "Professor", "home": "일본 오사카대 (Institute for Protein Research)", "hIndex": 43.0, "h5Index": 14.0, "citations": 935.0, "outputs": 66.0, "citPerPub": 14.2, "fwci": 1.68, "top10": 12.0}, {"track": "나-B", "unit": "약학과B", "division": "의약·간호", "pi": "강수성", "facultyN": 9.0, "scholarN": 2.0, "name": "Tao Ye", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 10000000.0, "salaryNote": null, "monthly": 833400.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(필수) 계약기간 내 최소 1회 대학원생 대상 교육 활동(강의, 세미나, 멘토링 등) 수행\n(인센티브) 이화여대 소속 명시하여 Q1 JCR 저널 출판 시 편당 5,000,000원 지급 (고용 기간 내 최대 2편)", "scopusId": "7102429442", "origPosition": "Professor", "home": "중국 베이징대 (Chemical Biology & Biotechnology)", "hIndex": 37.0, "h5Index": 6.0, "citations": 117.0, "outputs": 26.0, "citPerPub": 4.5, "fwci": 0.47, "top10": 0.0}, {"track": "나-B", "unit": "뇌인지과학B", "division": "자연과학", "pi": "류인균", "facultyN": 5.0, "scholarN": 1.0, "name": "Chang, Sooeun (장수은)", "position": "Visiting Professor", "status": "확정(계약 완료)", "statusGroup": "확정", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.03.01~2027.02.28", "monthsLeft": 8.4, "expiring": false, "salary": 40000800.0, "salaryNote": null, "monthly": 3333400.0, "incentive": 0.0, "incentiveNote": null, "conditions": "(의무) 이화여대 소속 명시하여 3편 이상 SCI(E)/SSCI 저널에 논문 출판", "scopusId": "23134680100", "origPosition": "Professor", "home": "미국 미시간대 (Psychiatry)", "hIndex": 26.0, "h5Index": 9.0, "citations": 339.0, "outputs": 19.0, "citPerPub": 17.8, "fwci": 2.99, "top10": 3.0}, {"track": "다-A", "unit": "특수교육A", "division": "사회과학", "pi": "이영선", "facultyN": 6.0, "scholarN": 1.0, "name": "김예진", "position": null, "status": "공동연구 상호합의서 작성 완료", "statusGroup": "공동연구", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.3.1~2027.2.28", "monthsLeft": 8.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(의무) 공동연구 수행 및 논문에 '이화여대' 소속 표기\n(인센티브) 주저자: SCIE 상위 10% 600만원, 25% 400만원, 50% 200만원, 기타 100만원, 공저자: SCIE 상위 50% 100만원, 기타 50만원", "scopusId": "7202242550.0", "origPosition": "Professor", "home": "호주 가톨릭 대학교 (Institute for Positive Psychology and Education)", "hIndex": 60.0, "h5Index": 15.0, "citations": 1328.0, "outputs": 44.0, "citPerPub": 30.2, "fwci": 6.71, "top10": 31.8}, {"track": "다-A", "unit": "특수교육A", "division": "사회과학", "pi": "이영선", "facultyN": 6.0, "scholarN": 1.0, "name": "이동근", "position": null, "status": "공동연구 상호합의서 작성 완료되었으나, 문구 수정 요청", "statusGroup": "공동연구", "startDate": "2026-03-01", "endDate": "2027-02-28", "period": "2026.3.1~2027.2.28", "monthsLeft": 8.4, "expiring": false, "salary": 0.0, "salaryNote": null, "monthly": 0.0, "incentive": 10000000.0, "incentiveNote": null, "conditions": "(의무) 공동연구 수행 및 논문에 '이화여대' 소속 표기\n(인센티브) 주저자: SCIE 상위 10% 600만원, 25% 400만원, 50% 200만원, 기타 100만원, 공저자: SCIE 상위 50% 100만원, 기타 50만원", "scopusId": "", "origPosition": "Professor", "home": "미국 텍사스 대 (Department of Journalism)", "hIndex": null, "h5Index": null, "citations": null, "outputs": null, "citPerPub": null, "fwci": null, "top10": null}];
+const GREEN='#00664F',ORANGE='#F0673C',GRAY='#B9B9B9';
+const DIVS=['공학','자연과학','의약·간호','사회과학','인문'];
+const DIVCOL={'공학':'#00664F','자연과학':'#2a9d8f','의약·간호':'#F0673C','사회과학':'#7c9885','인문':'#B9B9B9'};
+const won=n=>n==null?'-':(n>=100000000?(n/100000000).toFixed(1)+'억':Math.round(n/10000).toLocaleString('ko')+'만');
+const mil=n=>Math.round((n||0)/1000000);
+const avg=a=>{a=a.filter(x=>x!=null);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null};
+
+/* ---------- KPI ---------- */
+function kpis(){
+  const conf=DATA.filter(d=>d.statusGroup==='확정');
+  const fwci=DATA.map(d=>d.fwci).filter(x=>x!=null);
+  const totSal=DATA.reduce((s,d)=>s+(d.salary||0),0);
+  const totInc=DATA.reduce((s,d)=>s+(d.incentive||0),0);
+  const above=fwci.filter(x=>x>=1).length;
+  const cards=[
+    {l:'초빙 대상 석학',v:DATA.length,u:'명',s:`확정 계약 ${conf.length}명`},
+    {l:'계약 확정률',v:Math.round(conf.length/DATA.length*100),u:'%',s:`진행·심의 ${DATA.length-conf.length}명`},
+    {l:'평균 FWCI',v:avg(fwci).toFixed(2),u:'',s:'글로벌 평균 1.00',a:1},
+    {l:'글로벌 평균 상회',v:Math.round(above/fwci.length*100),u:'%',s:`${above}/${fwci.length}명 FWCI≥1.0`},
+    {l:'연봉 총액',v:won(totSal),u:'원',s:'확정·진행 합산'},
+    {l:'인센티브 한도 총액',v:won(totInc),u:'원',s:'최대 지급 기준',a:1},
+  ];
+  document.getElementById('kpis').innerHTML=cards.map(c=>
+    `<div class="kpi ${c.a?'accent':''}"><div class="lab">${c.l}</div>
+     <div class="val">${c.v}<span class="unit">${c.u}</span></div><div class="sub">${c.s}</div></div>`).join('');
+}
+
+/* ---------- SVG helpers ---------- */
+function donut(el,items,total){
+  const R=78,r=46,cx=110,cy=110;let a=-Math.PI/2;
+  let segs='';
+  items.forEach(it=>{
+    const frac=it.v/total,ang=frac*Math.PI*2,a2=a+ang;
+    const x1=cx+R*Math.cos(a),y1=cy+R*Math.sin(a),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+    const xi2=cx+r*Math.cos(a2),yi2=cy+r*Math.sin(a2),xi1=cx+r*Math.cos(a);
+    const yi1=cy+r*Math.sin(a),large=ang>Math.PI?1:0;
+    segs+=`<path d="M${x1} ${y1} A${R} ${R} 0 ${large} 1 ${x2} ${y2} L${xi2} ${yi2} A${r} ${r} 0 ${large} 0 ${xi1} ${yi1} Z" fill="${it.c}"><title>${it.l}: ${it.v}명</title></path>`;
+    a=a2;
+  });
+  let leg=items.map(it=>`<span><i style="background:${it.c}"></i>${it.l} ${it.v}</span>`).join('');
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <svg viewBox="0 0 220 220" style="width:200px;flex:0 0 200px">${segs}
+    <text x="110" y="104" text-anchor="middle" style="font-size:30px;font-weight:800;fill:${GREEN}">${total}</text>
+    <text x="110" y="126" text-anchor="middle" class="tlab">총 인원</text></svg>
+    <div class="legend" style="flex-direction:column;gap:8px;margin:0">${leg}</div></div>`;
+}
+
+function hbars(el,items,opt={}){
+  const max=opt.max||Math.max(...items.map(i=>i.v),1);
+  const rh=34,pad=120,w=560,h=items.length*rh+10;
+  let bars='';
+  items.forEach((it,i)=>{
+    const y=i*rh+8,bw=(it.v/max)*(w-pad-70);
+    bars+=`<text x="${pad-10}" y="${y+15}" text-anchor="end" class="tlab" style="font-weight:700;fill:${it.c||GREEN}">${it.l}</text>`;
+    if(it.v2!=null){
+      const bw2=(it.v2/max)*(w-pad-70);
+      bars+=`<rect x="${pad}" y="${y+4}" width="${bw}" height="9" rx="3" fill="${GREEN}"/>`;
+      bars+=`<rect x="${pad}" y="${y+15}" width="${bw2}" height="9" rx="3" fill="${GRAY}"/>`;
+      bars+=`<text x="${pad+Math.max(bw,bw2)+8}" y="${y+18}" class="vlab">${it.v} / ${it.v2}</text>`;
+    }else{
+      bars+=`<rect x="${pad}" y="${y+6}" width="${bw}" height="14" rx="4" fill="${it.c||GREEN}"/>`;
+      bars+=`<text x="${pad+bw+8}" y="${y+17}" class="vlab">${it.disp!=null?it.disp:it.v}</text>`;
+    }
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${w} ${h}">${bars}</svg>`;
+}
+
+function histo(el,bins,opt={}){
+  const w=480,h=230,pad=44,bw=(w-pad-20)/bins.length,max=Math.max(...bins.map(b=>b.v),1);
+  let bars='',gl='';
+  for(let i=0;i<=4;i++){const y=pad+ (h-pad-30)*(1-i/4);gl+=`<line class="gl" x1="${pad}" y1="${y}" x2="${w-20}" y2="${y}"/><text x="${pad-7}" y="${y+3}" text-anchor="end" class="tlab">${Math.round(max*i/4)}</text>`;}
+  bins.forEach((b,i)=>{
+    const bh=(b.v/max)*(h-pad-30),x=pad+i*bw,y=h-30-bh;
+    bars+=`<rect x="${x+4}" y="${y}" width="${bw-8}" height="${bh}" rx="3" fill="${b.c||GREEN}"><title>${b.l}: ${b.v}명</title></rect>`;
+    if(b.v>0)bars+=`<text x="${x+bw/2}" y="${y-5}" text-anchor="middle" class="vlab">${b.v}</text>`;
+    bars+=`<text x="${x+bw/2}" y="${h-12}" text-anchor="middle" class="tlab">${b.l}</text>`;
+  });
+  let markEl='';
+  if(opt.markIdx!=null){const mx=pad+opt.markIdx*bw;markEl=`<line x1="${mx}" y1="${pad-6}" x2="${mx}" y2="${h-30}" stroke="${ORANGE}" stroke-width="2" stroke-dasharray="4 3"/><text x="${mx+4}" y="${h-36}" class="tlab" style="fill:${ORANGE};font-weight:700">${opt.markLab||''}</text>`;}
+  el.innerHTML=`<svg viewBox="0 0 ${w} ${h}">${gl}${bars}${markEl}</svg>`;
+}
+
+/* benchmark bars (FWCI by division) */
+function benchRows(el,rows,markVal,maxVal){
+  el.innerHTML=rows.map(r=>{
+    const pct=Math.min(r.v/maxVal*100,100),mk=markVal/maxVal*100;
+    return `<div class="bench"><div class="nm">${r.l}</div>
+      <div class="track"><div class="fill" style="width:${pct}%;background:${r.v>=markVal?GREEN:GRAY}"></div>
+      <div class="mark" style="left:${mk}%"></div></div>
+      <div class="v" style="color:${r.v>=markVal?GREEN:'#b8651f'}">${r.v.toFixed(2)}</div></div>`;
+  }).join('');
+}
+
+/* timeline */
+function timeline(el){
+  const rows=DATA.filter(d=>d.startDate&&d.endDate).sort((a,b)=>a.startDate<b.startDate?-1:1);
+  const minD=new Date('2025-09-01'),maxD=new Date('2028-06-01');
+  const span=maxD-minD,w=820,pad=150,rh=26,h=rows.length*rh+50;
+  let body='',grid='';
+  for(let y=2026;y<=2028;y++){
+    const x=pad+((new Date(y+'-01-01')-minD)/span)*(w-pad-30);
+    grid+=`<line class="gl" x1="${x}" y1="20" x2="${x}" y2="${h-20}"/><text x="${x}" y="15" text-anchor="middle" class="tlab" style="font-weight:700">${y}</text>`;
+  }
+  const today=new Date('2026-06-16'),tx=pad+((today-minD)/span)*(w-pad-30);
+  grid+=`<line x1="${tx}" y1="18" x2="${tx}" y2="${h-18}" stroke="${ORANGE}" stroke-width="1.5" stroke-dasharray="3 3"/><text x="${tx}" y="${h-6}" text-anchor="middle" class="tlab" style="fill:${ORANGE};font-weight:700">today</text>`;
+  rows.forEach((d,i)=>{
+    const y=30+i*rh,sx=pad+((new Date(d.startDate)-minD)/span)*(w-pad-30);
+    const ex=pad+((new Date(d.endDate)-minD)/span)*(w-pad-30);
+    const col=d.expiring?ORANGE:GREEN;
+    body+=`<text x="${pad-8}" y="${y+11}" text-anchor="end" class="tlab" style="font-weight:600">${d.name.length>16?d.name.slice(0,15)+'…':d.name}</text>`;
+    body+=`<rect x="${sx}" y="${y+3}" width="${Math.max(ex-sx,3)}" height="13" rx="6" fill="${col}" opacity="${d.expiring?1:.85}"><title>${d.name} | ${d.period} | 잔여 ${d.monthsLeft}개월</title></rect>`;
+    if(d.expiring)body+=`<text x="${ex+6}" y="${y+13}" class="tlab" style="fill:${ORANGE};font-weight:700">만료임박</text>`;
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${w} ${h}">${grid}${body}</svg>`;
+}
+
+/* scatter: incentive vs fwci */
+function scatter(el){
+  const pts=DATA.filter(d=>d.incentive!=null&&d.fwci!=null&&d.incentive>0);
+  const w=820,h=440,pad=56,maxX=55,maxY=Math.ceil(Math.max(...pts.map(p=>p.fwci))/2)*2;
+  const X=v=>pad+(v/maxX)*(w-pad-30),Y=v=>h-40-(v/maxY)*(h-40-20);
+  let grid='';
+  for(let i=0;i<=maxY;i+=2){const y=Y(i);grid+=`<line class="gl" x1="${pad}" y1="${y}" x2="${w-30}" y2="${y}"/><text x="${pad-8}" y="${y+3}" text-anchor="end" class="tlab">${i}</text>`;}
+  for(let i=0;i<=maxX;i+=10){const x=X(i);grid+=`<line class="gl" x1="${x}" y1="20" x2="${x}" y2="${h-40}"/><text x="${x}" y="${h-24}" text-anchor="middle" class="tlab">${i}</text>`;}
+  // quadrant guide
+  const mx=X(20),my=Y(2);
+  grid+=`<line x1="${mx}" y1="20" x2="${mx}" y2="${h-40}" stroke="${GRAY}" stroke-dasharray="5 4" opacity=".6"/>`;
+  grid+=`<line x1="${pad}" y1="${my}" x2="${w-30}" y2="${my}" stroke="${ORANGE}" stroke-dasharray="5 4" opacity=".7"/>`;
+  grid+=`<text x="${w-34}" y="34" text-anchor="end" class="tlab" style="fill:${GREEN};font-weight:700">고임팩트·고투자</text>`;
+  grid+=`<text x="${pad+6}" y="${my-8}" class="tlab" style="fill:${ORANGE};font-weight:700">FWCI 2.0</text>`;
+  grid+=`<text x="${(w-30)/2}" y="${h-6}" text-anchor="middle" class="tlab" style="font-weight:700">인센티브 최대 한도 (백만원)</text>`;
+  grid+=`<text x="16" y="${h/2}" transform="rotate(-90 16 ${h/2})" text-anchor="middle" class="tlab" style="font-weight:700">FWCI</text>`;
+  let dots='';
+  pts.forEach(p=>{
+    const rad=4+Math.min((p.hIndex||10)/14,9);
+    dots+=`<circle cx="${X(mil(p.incentive))}" cy="${Y(p.fwci)}" r="${rad}" fill="${DIVCOL[p.division]}" opacity=".72" stroke="#fff" stroke-width="1"><title>${p.name}\n${p.division} | 인센티브 ${won(p.incentive)} | FWCI ${p.fwci} | h ${p.hIndex}</title></circle>`;
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${w} ${h}">${grid}${dots}</svg>`;
+  document.getElementById('scatter_leg').innerHTML=DIVS.map(d=>`<span><i style="background:${DIVCOL[d]}"></i>${d}</span>`).join('')+`<span style="color:var(--gray-d)">● 크기 = h-index</span>`;
+}
+
+/* normalized division metric bars */
+function divMetrics(el){
+  const keys=[['fwci','FWCI'],['hIndex','h-index'],['citPerPub','Citations/Pub'],['top10','Top10% 논문']];
+  const data=DIVS.map(d=>{const sub=DATA.filter(x=>x.division===d);
+    return {d,vals:keys.map(k=>avg(sub.map(x=>x[k[0]])))};});
+  const maxes=keys.map((k,i)=>Math.max(...data.map(r=>r.vals[i]||0)));
+  const w=820,gh=150,gap=28,grpW=(w-60)/keys.length;
+  let svg='';
+  keys.forEach((k,ki)=>{
+    const gx=40+ki*grpW;
+    svg+=`<text x="${gx+grpW/2-14}" y="${gh+34}" text-anchor="middle" class="tlab" style="font-weight:700;fill:${GREEN}">${k[1]}</text>`;
+    const bw=(grpW-30)/DIVS.length;
+    data.forEach((r,di)=>{
+      const v=r.vals[ki]||0,bh=(v/maxes[ki])*gh,x=gx+di*bw,y=gh+10-bh;
+      svg+=`<rect x="${x}" y="${y}" width="${bw-3}" height="${bh}" rx="2" fill="${DIVCOL[r.d]}"><title>${r.d} ${k[1]}: ${v.toFixed(2)}</title></rect>`;
+      svg+=`<text x="${x+bw/2-1}" y="${y-3}" text-anchor="middle" style="font-size:9px;font-weight:700;fill:${DIVCOL[r.d]}">${v>=10?Math.round(v):v.toFixed(1)}</text>`;
+    });
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${w} ${gh+50}">${svg}</svg>
+   <div class="legend">${DIVS.map(d=>`<span><i style="background:${DIVCOL[d]}"></i>${d}</span>`).join('')}</div>`;
+}
+
+/* ---------- charts build ---------- */
+function buildOverview(){
+  kpis();
+  const sg=['확정','진행','공동연구','심의','제외','보류'];
+  const sgcol={'확정':GREEN,'진행':'#e8943a','공동연구':'#3a72c4','심의':'#7c5cc4','제외':GRAY,'보류':'#cfcfcf'};
+  const sgi=sg.map(s=>({l:s,v:DATA.filter(d=>d.statusGroup===s).length,c:sgcol[s]})).filter(x=>x.v>0);
+  donut(document.getElementById('c_status'),sgi,DATA.length);
+
+  const di=DIVS.map(d=>{const sub=DATA.filter(x=>x.division===d);
+    return {l:d,v:sub.filter(x=>x.statusGroup==='확정').length,v2:sub.filter(x=>x.statusGroup!=='확정').length,c:DIVCOL[d]};});
+  hbars(document.getElementById('c_div'),di,{max:Math.max(...di.map(i=>i.v+i.v2))});
+  document.getElementById('c_div').insertAdjacentHTML('afterend',
+    `<div class="legend"><span><i style="background:${GREEN}"></i>확정</span><span><i style="background:${GRAY}"></i>진행·기타</span></div>`);
+
+  const fr=DIVS.map(d=>({l:d,v:avg(DATA.filter(x=>x.division===d).map(x=>x.fwci))||0}));
+  benchRows(document.getElementById('c_fwcidiv'),fr,1.0,Math.max(...fr.map(r=>r.v)));
+
+  const conf=DATA.filter(d=>d.statusGroup==='확정').length;
+  const fwciAll=DATA.map(d=>d.fwci).filter(x=>x!=null);
+  const above=fwciAll.filter(x=>x>=1).length;
+  document.getElementById('insight_box').innerHTML=`
+   <div class="insight" style="margin-bottom:11px"><span class="ih">▍의약·간호·자연과학이 임팩트를 견인</span>
+     의약·간호 계열 평균 FWCI <b>5.15</b>로 글로벌 평균의 5배 수준. 자연과학(2.59)·사회과학(2.86)도 상회하며, 초빙 전략의 분야 집중이 성과로 확인됨.</div>
+   <div class="insight" style="margin-bottom:11px;border-left-color:${ORANGE}"><span class="ih" style="color:${ORANGE}">▍공학·인문은 보강 대상</span>
+     공학 평균 FWCI <b>1.79</b>로 상회하나 확정률(6/14)이 낮아 계약 가속화 필요. 인문(0.27)은 분야 특성상 피인용 기반 지표의 한계가 큼 — 정성지표 병행 필요.</div>
+   <div class="insight"><span class="ih">▍계약 관리</span>
+     전체 ${DATA.length}명 중 ${conf}명 확정(${Math.round(conf/DATA.length*100)}%), FWCI 글로벌 평균 상회 비율 <b>${Math.round(above/fwciAll.length*100)}%</b>. 임용기간 만료 추적 체계 가동 권장.</div>`;
+}
+
+function buildContract(){
+  const pos=['Visiting Professor','Distinguished Professor','협의 중','임용 제외','임용 취소','사업단에서 보류'];
+  const pi=pos.map(p=>({l:p,v:DATA.filter(d=>d.position===p).length})).filter(x=>x.v>0);
+  hbars(document.getElementById('c_pos'),pi,{max:Math.max(...pi.map(i=>i.v))});
+  const tr=['가-A','가-B','나-A','나-B','다-A'].map(t=>({l:t,v:DATA.filter(d=>d.track===t).length})).filter(x=>x.v>0);
+  hbars(document.getElementById('c_track'),tr,{max:Math.max(...tr.map(i=>i.v))});
+  timeline(document.getElementById('c_timeline'));
+}
+
+function buildComp(){
+  const conf=DATA.filter(d=>d.statusGroup==='확정');
+  const totSal=DATA.reduce((s,d)=>s+(d.salary||0),0);
+  const totInc=DATA.reduce((s,d)=>s+(d.incentive||0),0);
+  const withSal=DATA.filter(d=>d.salary).length;
+  const c=[
+    {l:'연봉 지급 대상',v:withSal,u:'명',s:'연봉 책정 완료'},
+    {l:'연봉 총액',v:won(totSal),u:'원',s:'전체 합산'},
+    {l:'인센티브 한도 총액',v:won(totInc),u:'원',s:'최대 지급 기준',a:1},
+    {l:'평균 인센티브 한도',v:won(totInc/DATA.filter(d=>d.incentive).length),u:'원',s:'건당 평균'},
+  ];
+  document.getElementById('kpis_comp').innerHTML=c.map(x=>
+    `<div class="kpi ${x.a?'accent':''}"><div class="lab">${x.l}</div><div class="val">${x.v}<span class="unit">${x.u}</span></div><div class="sub">${x.s}</div></div>`).join('');
+
+  const cd=DIVS.map(d=>{const sub=DATA.filter(x=>x.division===d);
+    return {l:d,v:mil(sub.reduce((s,x)=>s+(x.salary||0),0)),v2:mil(sub.reduce((s,x)=>s+(x.incentive||0),0)),c:DIVCOL[d]};});
+  hbars(document.getElementById('c_compdiv'),cd,{max:Math.max(...cd.map(i=>Math.max(i.v,i.v2)))});
+  document.getElementById('c_compdiv').insertAdjacentHTML('afterend',
+    `<div class="legend"><span><i style="background:${GREEN}"></i>연봉(백만)</span><span><i style="background:${GRAY}"></i>인센티브 한도(백만)</span></div>`);
+
+  const ib=[['0',0,0],['~10',1,10],['~20',11,20],['~30',21,30],['~40',31,40],['40+',41,999]];
+  const bins=ib.map(b=>({l:b[0]+(b[0]!=='0'&&b[0]!=='40+'?'백만':''),v:DATA.filter(d=>{const m=mil(d.incentive);return d.incentive!=null&&m>=b[1]&&m<=b[2]}).length,c:GREEN}));
+  histo(document.getElementById('c_inchist'),bins);
+  scatter(document.getElementById('c_scatter'));
+}
+
+function buildMetrics(){
+  const fb=[['<1',0,1],['1–2',1,2],['2–3',2,3],['3–4',3,4],['4–5',4,5],['5+',5,99]];
+  histo(document.getElementById('c_fwcihist'),fb.map((b,i)=>({l:b[0],v:DATA.filter(d=>d.fwci!=null&&d.fwci>=b[1]&&d.fwci<b[2]).length,c:i===0?GRAY:GREEN})),{markIdx:1,markLab:'1.0'});
+  const hb=[['<30',0,30],['30–60',30,60],['60–90',60,90],['90–120',90,120],['120+',120,999]];
+  histo(document.getElementById('c_hhist'),hb.map(b=>({l:b[0],v:DATA.filter(d=>d.hIndex!=null&&d.hIndex>=b[1]&&d.hIndex<b[2]).length,c:GREEN})));
+  const tb=[['0',0,1],['1–10',1,11],['11–20',11,21],['21–40',21,41],['40+',41,999]];
+  histo(document.getElementById('c_tophist'),tb.map(b=>({l:b[0],v:DATA.filter(d=>d.top10!=null&&d.top10>=b[1]&&d.top10<b[2]).length,c:ORANGE})));
+  divMetrics(document.getElementById('c_radar'));
+}
+
+/* ---------- table ---------- */
+let sortKey='fwci',sortDir=-1;
+const COLS=[
+  {k:'name',l:'성명',t:'s'},{k:'division',l:'계열',t:'d'},{k:'unit',l:'신청단위',t:'s'},
+  {k:'position',l:'임용직위',t:'s'},{k:'statusGroup',l:'진행현황',t:'p'},
+  {k:'salary',l:'연봉',t:'won'},{k:'incentive',l:'인센티브',t:'won'},
+  {k:'fwci',l:'FWCI',t:'n2'},{k:'hIndex',l:'h-index',t:'n'},
+  {k:'citations',l:'Citations',t:'nc'},{k:'top10',l:'Top10%',t:'n'},
+];
+function renderTable(){
+  const q=document.getElementById('q').value.toLowerCase();
+  const fd=document.getElementById('fdiv').value,fs=document.getElementById('fstat').value;
+  let rows=DATA.filter(d=>{
+    const hit=!q||(d.name+d.home+d.unit+d.origPosition).toLowerCase().includes(q);
+    return hit&&(!fd||d.division===fd)&&(!fs||d.statusGroup===fs);
+  });
+  rows.sort((a,b)=>{let x=a[sortKey],y=b[sortKey];
+    if(x==null)x=sortDir>0?Infinity:-Infinity; if(y==null)y=sortDir>0?Infinity:-Infinity;
+    if(typeof x==='string')return x<y?-sortDir:x>y?sortDir:0; return (x-y)*sortDir;});
+  document.querySelector('#tbl thead').innerHTML='<tr>'+COLS.map(c=>
+    `<th class="${['won','n2','n','nc'].includes(c.t)?'num':''}" data-k="${c.k}">${c.l}${sortKey===c.k?` <span class="arr">${sortDir>0?'▲':'▼'}</span>`:''}</th>`).join('')+'</tr>';
+  document.querySelector('#tbl tbody').innerHTML=rows.map((d,i)=>{
+    const idx=DATA.indexOf(d);
+    return `<tr data-i="${idx}">`+COLS.map(c=>{
+      let v=d[c.k];
+      if(c.t==='s'&&c.k==='name')return `<td class="nm-cell">${v}<small>${d.origPosition||''}</small></td>`;
+      if(c.t==='s')return `<td>${v||'-'}</td>`;
+      if(c.t==='d')return `<td><span class="dpill" style="background:${DIVCOL[v]}22;color:${DIVCOL[v]}">${v}</span></td>`;
+      if(c.t==='p')return `<td><span class="pill p-${v}">${d.statusGroup}</span></td>`;
+      if(c.t==='won')return `<td class="num">${v?won(v):(d[c.k+'Note']?'<span style="color:var(--gray)">'+d[c.k+'Note']+'</span>':'-')}</td>`;
+      if(c.t==='n2')return `<td class="num ${v>=2?'fwci-hi':''}">${v!=null?v.toFixed(2):'-'}</td>`;
+      if(c.t==='nc')return `<td class="num">${v!=null?Math.round(v).toLocaleString():'-'}</td>`;
+      return `<td class="num">${v!=null?Math.round(v):'-'}</td>`;
+    }).join('')+'</tr>';
+  }).join('');
+  document.getElementById('rowcnt').innerHTML=`<b>${rows.length}</b> / ${DATA.length}명`;
+}
+
+/* ---------- modal ---------- */
+function openModal(i){
+  const d=DATA[i];
+  const m=document.getElementById('modal');
+  const stat=(l,v,hl)=>`<div class="mstat ${hl?'hl':''}"><div class="l">${l}</div><div class="v">${v}</div></div>`;
+  const info=(k,v)=>`<div><span class="k">${k}</span><span class="v">${v||'-'}</span></div>`;
+  m.innerHTML=`
+   <div class="mhead"><button class="mclose" onclick="document.getElementById('ov').classList.remove('on')">×</button>
+     <h3>${d.name}</h3><div class="mh-sub">${d.home||''} · ${d.origPosition||''}</div></div>
+   <div class="mbody">
+     <div class="mrow">
+       ${stat('FWCI',d.fwci!=null?d.fwci.toFixed(2):'-',d.fwci>=2)}
+       ${stat('h-index',d.hIndex??'-')}
+       ${stat('Citations',d.citations!=null?Math.round(d.citations).toLocaleString():'-')}
+       ${stat('Top 10% 논문',d.top10!=null?Math.round(d.top10):'-')}
+     </div>
+     <div class="minfo">
+       ${info('계열',d.division)} ${info('신청단위',d.unit)}
+       ${info('연구책임자',d.pi)} ${info('임용직위',d.position)}
+       ${info('진행현황',d.status)} ${info('임용기간',d.period||'미정')}
+       ${info('연봉',d.salary?won(d.salary)+'원':(d.salaryNote||'-'))} ${info('인센티브(최대)',d.incentive?won(d.incentive)+'원':(d.incentiveNote||'-'))}
+       ${info('Scholarly Outputs',d.outputs!=null?Math.round(d.outputs):'-')} ${info('Citations/Pub',d.citPerPub!=null?d.citPerPub.toFixed(1):'-')}
+       ${info('h5-index',d.h5Index??'-')} ${info('Scopus ID',d.scopusId||'-')}
+     </div>
+     ${d.conditions?`<div class="mblock"><div class="bl">필수사항 및 인센티브 조건</div><div class="bt">${d.conditions}</div></div>`:''}
+   </div>`;
+  document.getElementById('ov').classList.add('on');
+}
+
+/* ---------- init ---------- */
+document.getElementById('nav').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  e.target.classList.add('on');
+  document.getElementById(e.target.dataset.t).classList.add('on');
+});
+document.querySelector('#tbl thead').addEventListener('click',e=>{
+  const th=e.target.closest('th'); if(!th)return;
+  const k=th.dataset.k; if(sortKey===k)sortDir*=-1; else{sortKey=k;sortDir=(['name','division','unit','position'].includes(k))?1:-1;}
+  renderTable();
+});
+document.querySelector('#tbl tbody').addEventListener('click',e=>{
+  const tr=e.target.closest('tr'); if(tr)openModal(+tr.dataset.i);
+});
+document.getElementById('ov').addEventListener('click',e=>{if(e.target.id==='ov')e.currentTarget.classList.remove('on');});
+['q','fdiv','fstat'].forEach(id=>document.getElementById(id).addEventListener('input',renderTable));
+
+DIVS.forEach(d=>document.getElementById('fdiv').insertAdjacentHTML('beforeend',`<option>${d}</option>`));
+['확정','진행','공동연구','심의','제외','보류'].forEach(s=>document.getElementById('fstat').insertAdjacentHTML('beforeend',`<option>${s}</option>`));
+
+buildOverview();buildContract();buildComp();buildMetrics();renderTable();
+</script>
+</body>
+</html>
